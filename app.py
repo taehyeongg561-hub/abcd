@@ -12,7 +12,6 @@ st.write("""
 - Space : 하드 드롭  
 """)
 
-# HTML/JS 코드를 """ 안에 넣되 내부 모든 """를 "로 바꿈
 tetris_html = """
 <canvas id="tetris" width="240" height="400"></canvas>
 <script>
@@ -80,4 +79,29 @@ function merge(arena,player){
 function playerDrop(){
     player.pos.y++;
     if(collide(arena,player)){
-        player.
+        player.pos.y--;
+        merge(arena,player);
+        playerReset();
+        arenaSweep();
+    }
+    dropCounter=0;
+}
+
+function playerMove(dir){
+    player.pos.x+=dir;
+    if(collide(arena,player)) player.pos.x-=dir;
+}
+
+function rotate(matrix,dir){
+    for(let y=0;y<matrix.length;y++)
+        for(let x=0;x<y;x++)
+            [matrix[x][y],matrix[y][x]]=[matrix[y][x],matrix[x][y]];
+    if(dir>0) matrix.forEach(row=>row.reverse());
+    else matrix.reverse();
+}
+
+function playerRotate(dir){
+    const pos=player.pos.x;
+    let offset=1;
+    rotate(player.matrix,dir);
+    while(collide(arena,player)){
