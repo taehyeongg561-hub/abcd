@@ -1,124 +1,234 @@
 import streamlit as st
-import numpy as np
-import random
+import streamlit.components.v1 as components
 
-st.set_page_config(layout="centered")
+st.set_page_config(layout="wide")
 
-# ---------------------
-# 초기 상태 설정
-# ---------------------
-if "board" not in st.session_state:
-    st.session_state.board = np.zeros((20, 10), dtype=int)
-if "shape" not in st.session_state:
-    st.session_state.shape = None
-if "pos" not in st.session_state:
-    st.session_state.pos = [0, 3]  # (row, col)
+st.title("🎮 Streamlit - 테트리스 (키보드 조작 + 자동 낙하)")
 
-# 두 가지 간단한 블록(I, O)
-SHAPES = {
-    "I": np.array([[1, 1, 1, 1]]),
-    "O": np.array([[1, 1],
-                   [1, 1]])
+st.write("""
+**조작 방법**
+- ⬅ 왼쪽 화살표: 왼쪽 이동  
+- ➡ 오른쪽 화살표: 오른쪽 이동  
+- ⬆ 위쪽 화살표: 회전  
+- ⬇ 아래 화살표: 빠른 낙하  
+- Space: 하드 드롭  
+""")
+
+html_code = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tetris</title>
+
+    <style>
+        body {
+            text-align: center;
+            background: #111;
+            color: white;
+            font-family: Arial;
+        }
+        canvas {
+            background: #222;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+<canvas id="tetris" width="300" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('tetris');
+const context = canvas.getContext('2d');
+context.scale(30, 30);
+
+function arenaSweep() {
+    outer: for (let y = arena.length - 1; y > 0; --y) {
+        for (let x = 0; x < arena[y].length; ++x) {
+            if (arena[y][x] === 0) {
+                continue outer;
+            }
+        }
+        const row = arena.splice(y, 1)[0].fill(0);
+        arena.unshift(row);
+        ++y;
+    }
 }
 
-def spawn_new_block():
-    shape_name = random.choice(["I", "O"])
-    st.session_state.shape = SHAPES[shape_name]
-    st.session_state.pos = [0, 3]
+function collide(arena, player) {
+    const m = player.matrix;
+    const o = player.pos;
+    for (let y = 0; y < m.length; ++y) {
+        for (let x = 0; x < m[y].length; ++x) {
+            if (m[y][x] !== 0 &&
+                (arena[y + o.y] &&
+                 arena[y + o.y][x + o.x]) !== 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
-def can_move(shape, pos):
-    rows, cols = shape.shape
-    r, c = pos
+function createMatrix(w, h) {
+    const matrix = [];
+    while (h--) matrix.push(new Array(w).fill(0));
+    return matrix;
+}
 
-    # 보드 밖으로 나가면 안 됨
-    if r < 0 or r + rows > 20 or c < 0 or c + cols > 10:
-        return False
+function createPiece(type) {
+    if (type === 'T') {
+        return [
+            [0, 1, 0],
+            [1, 1, 1],
+            [0, 0, 0],
+        ];
+    } else if (type === 'O') {
+        return [
+            [1, 1],
+            [1, 1],
+        ];
+    } else if (type === 'L') {
+        return [
+            [1, 0, 0],
+            [1, 1, 1],
+            [0, 0, 0],
+        ];
+    } else if (type === 'J') {
+        return [
+            [0, 0, 1],
+            [1, 1, 1],
+            [0, 0, 0],
+        ];
+    } else if (type === 'I') {
+        return [
+            [0, 0, 0, 0],
+            [1, 1, 1, 1],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+        ];
+    } else if (type === 'S') {
+        return [
+            [0, 1, 1],
+            [1, 1, 0],
+            [0, 0, 0],
+        ];
+    } else if (type === 'Z') {
+        return [
+            [1, 1, 0],
+            [0, 1, 1],
+            [0, 0, 0],
+        ];
+    }
+}
 
-    # 충돌 검사
-    for i in range(rows):
-        for j in range(cols):
-            if shape[i, j] == 1 and st.session_state.board[r + i, c + j] == 1:
-                return False
-    return True
+function drawMatrix(matrix, offset) {
+    matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                context.fillStyle = colors[value];
+                context.fillRect(x + offset.x,
+                                 y + offset.y,
+                                 1, 1);
+            }
+        });
+    });
+}
 
-def fix_block():
-    shape = st.session_state.shape
-    r, c = st.session_state.pos
-    rows, cols = shape.shape
+function draw() {
+    context.fillStyle = "#222";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    drawMatrix(arena, {x: 0, y: 0});
+    drawMatrix(player.matrix, player.pos);
+}
 
-    for i in range(rows):
-        for j in range(cols):
-            if shape[i, j] == 1:
-                st.session_state.board[r + i, c + j] = 1
+function merge(arena, player) {
+    player.matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                arena[y + player.pos.y][x + player.pos.x] = value;
+            }
+        });
+    });
+}
 
-def move_block(dr, dc):
-    shape = st.session_state.shape
-    r, c = st.session_state.pos
-    new_pos = [r + dr, c + dc]
+function playerDrop() {
+    player.pos.y++;
+    if (collide(arena, player)) {
+        player.pos.y--;
+        merge(arena, player);
+        playerReset();
+        arenaSweep();
+    }
+    dropCounter = 0;
+}
 
-    if can_move(shape, new_pos):
-        st.session_state.pos = new_pos
-        return True
-    return False
+function playerMove(dir) {
+    player.pos.x += dir;
+    if (collide(arena, player)) {
+        player.pos.x -= dir;
+    }
+}
 
-def rotate_block():
-    new_shape = np.rot90(st.session_state.shape)
-    if can_move(new_shape, st.session_state.pos):
-        st.session_state.shape = new_shape
+function playerReset() {
+    const pieces = 'ILJOTSZ';
+    player.matrix = createPiece(pieces[Math.floor(pieces.length * Math.random())]);
+    player.pos.y = 0;
+    player.pos.x = (10 / 2 | 0) - (player.matrix[0].length / 2 | 0);
 
-def step():
-    if not move_block(1, 0):  # 아래로 이동
-        fix_block()
-        spawn_new_block()
+    if (collide(arena, player)) {
+        arena.forEach(row => row.fill(0));
+    }
+}
 
-# ---------------------
-# UI 구성
-# ---------------------
-st.title("🎮 Streamlit 초간단 테트리스")
-st.write("버튼으로 조작하세요!")
+function rotate(matrix, dir) {
+    for (let y = 0; y < matrix.length; ++y) {
+        for (let x = 0; x < y; ++x) {
+            [ matrix[x][y], matrix[y][x] ] = [ matrix[y][x], matrix[x][y] ];
+        }
+    }
+    if (dir > 0) {
+        matrix.forEach(row => row.reverse());
+    } else {
+        matrix.reverse();
+    }
+}
 
-# 첫 블록 생성
-if st.session_state.shape is None:
-    spawn_new_block()
+function playerRotate(dir) {
+    const pos = player.pos.x;
+    let offset = 1;
+    rotate(player.matrix, dir);
+    while (collide(arena, player)) {
+        player.pos.x += offset;
+        offset = -(offset + (offset > 0 ? 1 : -1));
+        if (offset > player.matrix[0].length) {
+            rotate(player.matrix, -dir);
+            player.pos.x = pos;
+            return;
+        }
+    }
+}
 
-col1, col2, col3, col4 = st.columns(4)
-if col1.button("⬅ 왼쪽"):
-    move_block(0, -1)
-if col2.button("➡ 오른쪽"):
-    move_block(0, 1)
-if col3.button("🔄 회전"):
-    rotate_block()
-if col4.button("⬇ 아래"):
-    step()
+let dropCounter = 0;
+let dropInterval = 800;
 
-# 자동 낙하 버튼
-if st.button("한 단계 진행"):
-    step()
+let lastTime = 0;
 
-# ---------------------
-# 보드 + 현재 블록 시각화
-# ---------------------
-temp_board = st.session_state.board.copy()
+function update(time = 0) {
+    const deltaTime = time - lastTime;
+    lastTime = time;
 
-shape = st.session_state.shape
-r, c = st.session_state.pos
-rows, cols = shape.shape
+    dropCounter += deltaTime;
 
-for i in range(rows):
-    for j in range(cols):
-        if shape[i, j] == 1:
-            temp_board[r + i, c + j] = 2  # falling block 표시
+    if (dropCounter > dropInterval) {
+        playerDrop();
+    }
 
-# 화면 표시 (emoji로 표시)
-display = ""
-for row in temp_board:
-    for cell in row:
-        if cell == 0:
-            display += "⬛"
-        elif cell == 1:
-            display += "🟩"
-        else:
-            display += "🟦"
-    display += "\n"
+    draw();
+    requestAnimationFrame(update);
+}
 
-st.markdown(f"<pre style='font-size:20px'>{display}</pre>", unsafe_allow_html=True)
+document.addEventListener('keydown', event => {
+    if (event.key === 'ArrowLeft') playerMove(-1);
+    else if (
