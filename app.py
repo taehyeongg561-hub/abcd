@@ -16,8 +16,8 @@ st.write("""
 - Space : 하드 드롭 (빠르게 끝까지 떨어짐)  
 """)
 
-# 외부 테트리스 게임 URL을 iframe으로 불러오기
-tetris_url = "https://tetris.jutge.org/tetris_en.html"
+# 다른 테트리스 웹사이트 사용 (Tetris.com)
+tetris_url = "https://tetris.com/play-tetris"
 
 # iframe으로 테트리스를 표시
 st.components.v1.iframe(src=tetris_url, height=600)
