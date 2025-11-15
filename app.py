@@ -12,7 +12,7 @@ st.write("""
 - Space : 하드 드롭  
 """)
 
-tetris_html = '''
+tetris_html = r'''
 <div style="display:flex; flex-direction:column; align-items:center;">
     <h3>Score: <span id="score">0</span> | Level: <span id="level">1</span></h3>
     <canvas id="tetris" width="240" height="400" style="border:1px solid #333;"></canvas>
@@ -49,7 +49,7 @@ function arenaSweep() {
         if(score >= level*50){
             level++;
             levelElem.innerText = level;
-            dropInterval *= 0.9; // 블록 낙하 속도 증가
+            dropInterval *= 0.9; 
         }
     }
 }
@@ -71,4 +71,5 @@ function createMatrix(w,h){
 
 function createPiece(type){
     if(type==="T") return [[0,1,0],[1,1,1],[0,0,0]];
-    if(type===
+    if(type==="O") return [[1,1],[1,1]];
+    if(type==="L") return [[0,0,1],[1,1,1],[0,0,0]]
