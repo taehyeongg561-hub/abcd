@@ -12,7 +12,8 @@ st.write("""
 - Space : 하드 드롭  
 """)
 
-tetris_html = """
+# Escape 처리된 HTML + JavaScript 코드
+tetris_html = '''
 <canvas id="tetris" width="240" height="400"></canvas>
 <script>
 const canvas = document.getElementById("tetris");
@@ -58,50 +59,4 @@ function drawMatrix(matrix, offset){
     matrix.forEach((row,y)=>row.forEach((value,x)=>{
         if(value!==0){
             context.fillStyle=colors[value];
-            context.fillRect(x+offset.x,y+offset.y,1,1);
-        }
-    }));
-}
-
-function draw(){
-    context.fillStyle="#000";
-    context.fillRect(0,0,canvas.width,canvas.height);
-    drawMatrix(arena,{x:0,y:0});
-    drawMatrix(player.matrix,player.pos);
-}
-
-function merge(arena,player){
-    player.matrix.forEach((row,y)=>row.forEach((value,x)=>{
-        if(value!==0) arena[y+player.pos.y][x+player.pos.x]=value;
-    }));
-}
-
-function playerDrop(){
-    player.pos.y++;
-    if(collide(arena,player)){
-        player.pos.y--;
-        merge(arena,player);
-        playerReset();
-        arenaSweep();
-    }
-    dropCounter=0;
-}
-
-function playerMove(dir){
-    player.pos.x+=dir;
-    if(collide(arena,player)) player.pos.x-=dir;
-}
-
-function rotate(matrix,dir){
-    for(let y=0;y<matrix.length;y++)
-        for(let x=0;x<y;x++)
-            [matrix[x][y],matrix[y][x]]=[matrix[y][x],matrix[x][y]];
-    if(dir>0) matrix.forEach(row=>row.reverse());
-    else matrix.reverse();
-}
-
-function playerRotate(dir){
-    const pos=player.pos.x;
-    let offset=1;
-    rotate(player.matrix,dir);
-    while(collide(arena,player)){
+            context.fillRect(x+offset.x,y+offset.
